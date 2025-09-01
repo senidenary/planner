@@ -1,0 +1,14 @@
+.{
+    .name = .planner,
+    .version = "0.0.0",
+    .fingerprint = 0x95517761221e3fba, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.16.0-dev.48+aae556071",
+    .dependencies = .{
+        
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
