@@ -418,8 +418,6 @@ pub const format = struct {
 
 pub const TimeZone = enum {
     UTC,
-
-    usingnamespace extras.TagNameJsonStringifyMixin(@This());
 };
 
 pub const WeekDay = enum {
@@ -442,15 +440,11 @@ pub const WeekDay = enum {
             .Sat => .Sun,
         };
     }
-
-    usingnamespace extras.TagNameJsonStringifyMixin(@This());
 };
 
 pub const Era = enum {
     // BC,
     AD,
-
-    usingnamespace extras.TagNameJsonStringifyMixin(@This());
 };
 
 pub fn isLeapYear(year: u16) bool {
