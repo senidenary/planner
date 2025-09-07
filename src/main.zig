@@ -2,37 +2,103 @@ const std = @import("std");
 const time = @import("time.zig");
 
 pub fn main() !void {
-    const t = time.DateTime.now();
-    // Prints to stderr, ignoring potential errors.
-    std.debug.print("All your {d} are belong to us.\n", .{t.years});
-    try bufferedPrint();
-}
+    const year = 2025;
 
-fn bufferedPrint() !void {
-    // Stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
+    const first_sunday = FirstSundayOfYear(year);
+
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+    try stdout.print("{d}\n", .{first_sunday.days});
 
-    try stdout.flush(); // Don't forget to flush!
+    std.debug.print("{s}", .{"!!!!!\n"});
+    var current_sunday = first_sunday;
+    for (0..53) |i| {
+        std.debug.print("{d}\n", .{i});
+        const months = MonthsForWeekBeginningWith(current_sunday);
+        try stdout.print("{d}", .{months.first_month});
+        if (months.second_month) |second_month| {
+            try stdout.print(" | {d}", .{second_month});
+        }
+        try stdout.print("\n", .{});
+        current_sunday = current_sunday.addDays(7);
+        try stdout.flush();
+    }
+
+    try stdout.flush();
 }
 
-fn add(a: i32, b: i32) i32 {
-    return a + b;
+fn FirstSundayOfYear(year: u16) time.DateTime {
+    var sunday_year = year;
+    var sunday_month: u16 = undefined;
+    var sunday_day: u16 = undefined;
+
+    // The first week of the year always contains January 4
+    const first_jan_4 = time.DateTime.init(year, 0, 3, 0, 0, 0);
+    const first_jan_4_weekday = first_jan_4.weekday();
+
+    if (first_jan_4_weekday == time.WeekDay.Sun) {
+        sunday_day = 3;
+        sunday_month = 0;
+    } else if (first_jan_4_weekday == time.WeekDay.Mon) {
+        sunday_day = 2;
+        sunday_month = 0;
+    } else if (first_jan_4_weekday == time.WeekDay.Tue) {
+        sunday_day = 1;
+        sunday_month = 0;
+    } else if (first_jan_4_weekday == time.WeekDay.Wed) {
+        sunday_day = 0;
+        sunday_month = 0;
+    } else if (first_jan_4_weekday == time.WeekDay.Thu) {
+        sunday_day = 30;
+        sunday_month = 11;
+        sunday_year -= 1;
+    } else if (first_jan_4_weekday == time.WeekDay.Fri) {
+        sunday_day = 29;
+        sunday_month = 11;
+        sunday_year -= 1;
+    } else if (first_jan_4_weekday == time.WeekDay.Sat) {
+        sunday_day = 28;
+        sunday_month = 11;
+        sunday_year -= 1;
+    } else {
+        unreachable;
+    }
+
+    return time.DateTime.init(sunday_year, sunday_month, sunday_day, 0, 0, 0);
 }
 
-test "basic add functionality" {
-    try std.testing.expect(add(3, 7) == 10);
+const MonthPair = struct { first_month: u16, second_month: ?u16 = null };
+
+fn MonthsForWeekBeginningWith(sunday: time.DateTime) MonthPair {
+    const saturday = sunday.addDays(6);
+    const first_month = sunday.months;
+    const second_month = saturday.months;
+    if (first_month == second_month) {
+        return MonthPair{ .first_month = first_month };
+    } else {
+        return MonthPair{ .first_month = first_month, .second_month = second_month };
+    }
 }
 
-test "simple test" {
-    const gpa = std.testing.allocator;
-    var list: std.ArrayList(i32) = .empty;
-    defer list.deinit(gpa); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(gpa, 42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
+test "Single Month" {
+    const months = MonthsForWeekBeginningWith(time.DateTime.init(2025, 8, 6, 0, 0, 0));
+
+    try std.testing.expectEqual(@as(u16, 8), months.first_month);
+    try std.testing.expectEqual(null, months.second_month);
+}
+
+test "Double Month" {
+    const months = MonthsForWeekBeginningWith(time.DateTime.init(2025, 7, 30, 0, 0, 0));
+
+    try std.testing.expectEqual(@as(u16, 7), months.first_month);
+    try std.testing.expectEqual(@as(u16, 8), months.second_month);
+}
+
+test "First Sunday 2025" {
+    const months = MonthsForWeekBeginningWith(time.DateTime.init(2024, 11, 28, 0, 0, 0));
+
+    try std.testing.expectEqual(@as(u16, 11), months.first_month);
+    try std.testing.expectEqual(@as(u16, 0), months.second_month);
 }
