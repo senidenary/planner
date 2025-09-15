@@ -1,5 +1,5 @@
 const std = @import("std");
-const time = @import("time.zig");
+const date = @import("date.zig");
 
 pub fn main() !void {
     const year = 2025;
@@ -29,52 +29,27 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn FirstSundayOfYear(year: u16) time.DateTime {
-    var sunday_year = year;
-    var sunday_month: u16 = undefined;
-    var sunday_day: u16 = undefined;
-
+fn FirstSundayOfYear(year: u16) date.Date {
     // The first week of the year always contains January 4
-    const first_jan_4 = time.DateTime.init(year, 0, 3, 0, 0, 0);
+    const first_jan_4 = date.Date.init(year, 1, 4);
     const first_jan_4_weekday = first_jan_4.weekday();
 
-    if (first_jan_4_weekday == time.WeekDay.Sun) {
-        sunday_day = 3;
-        sunday_month = 0;
-    } else if (first_jan_4_weekday == time.WeekDay.Mon) {
-        sunday_day = 2;
-        sunday_month = 0;
-    } else if (first_jan_4_weekday == time.WeekDay.Tue) {
-        sunday_day = 1;
-        sunday_month = 0;
-    } else if (first_jan_4_weekday == time.WeekDay.Wed) {
-        sunday_day = 0;
-        sunday_month = 0;
-    } else if (first_jan_4_weekday == time.WeekDay.Thu) {
-        sunday_day = 30;
-        sunday_month = 11;
-        sunday_year -= 1;
-    } else if (first_jan_4_weekday == time.WeekDay.Fri) {
-        sunday_day = 29;
-        sunday_month = 11;
-        sunday_year -= 1;
-    } else if (first_jan_4_weekday == time.WeekDay.Sat) {
-        sunday_day = 28;
-        sunday_month = 11;
-        sunday_year -= 1;
-    } else {
-        unreachable;
-    }
+    return first_jan_4.subtractDays(@intFromEnum(first_jan_4_weekday));
+}
 
-    return time.DateTime.init(sunday_year, sunday_month, sunday_day, 0, 0, 0);
+test "First Sunday 2025" {
+    try std.testing.expectEqual(date.Date.init(2023, 1, 1), FirstSundayOfYear(2023));
+    try std.testing.expectEqual(date.Date.init(2023, 12, 31), FirstSundayOfYear(2024));
+    try std.testing.expectEqual(date.Date.init(2024, 12, 29), FirstSundayOfYear(2025));
+    try std.testing.expectEqual(date.Date.init(2026, 1, 4), FirstSundayOfYear(2026));
 }
 
 const MonthPair = struct { first_month: u16, second_month: ?u16 = null };
 
-fn MonthsForWeekBeginningWith(sunday: time.DateTime) MonthPair {
+fn MonthsForWeekBeginningWith(sunday: date.Date) MonthPair {
     const saturday = sunday.addDays(6);
-    const first_month = sunday.months;
-    const second_month = saturday.months;
+    const first_month = sunday.month;
+    const second_month = saturday.month;
     if (first_month == second_month) {
         return MonthPair{ .first_month = first_month };
     } else {
@@ -82,23 +57,14 @@ fn MonthsForWeekBeginningWith(sunday: time.DateTime) MonthPair {
     }
 }
 
-test "Single Month" {
-    const months = MonthsForWeekBeginningWith(time.DateTime.init(2025, 8, 6, 0, 0, 0));
+test "MonthsForWeekBeginningWith" {
+    const single_month = MonthsForWeekBeginningWith(date.Date.init(2025, 9, 7));
 
-    try std.testing.expectEqual(@as(u16, 8), months.first_month);
-    try std.testing.expectEqual(null, months.second_month);
-}
+    try std.testing.expectEqual(@as(u16, 9), single_month.first_month);
+    try std.testing.expectEqual(null, single_month.second_month);
 
-test "Double Month" {
-    const months = MonthsForWeekBeginningWith(time.DateTime.init(2025, 7, 30, 0, 0, 0));
+    const double_month = MonthsForWeekBeginningWith(date.Date.init(2025, 8, 31));
 
-    try std.testing.expectEqual(@as(u16, 7), months.first_month);
-    try std.testing.expectEqual(@as(u16, 8), months.second_month);
-}
-
-test "First Sunday 2025" {
-    const months = MonthsForWeekBeginningWith(time.DateTime.init(2024, 11, 28, 0, 0, 0));
-
-    try std.testing.expectEqual(@as(u16, 11), months.first_month);
-    try std.testing.expectEqual(@as(u16, 0), months.second_month);
+    try std.testing.expectEqual(@as(u16, 8), double_month.first_month);
+    try std.testing.expectEqual(@as(u16, 9), double_month.second_month);
 }
