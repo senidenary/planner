@@ -4,18 +4,15 @@ const date = @import("date.zig");
 pub fn main() !void {
     const year = 2025;
 
-    const first_sunday = FirstSundayOfYear(year);
-
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    try stdout.print("{d}\n", .{first_sunday.days});
+    const first_sunday = FirstSundayOfYear(year);
 
-    std.debug.print("{s}", .{"!!!!!\n"});
     var current_sunday = first_sunday;
-    for (0..53) |i| {
-        std.debug.print("{d}\n", .{i});
+    for (1..54) |i| {
+        try stdout.print("{d}: ", .{i});
         const months = MonthsForWeekBeginningWith(current_sunday);
         try stdout.print("{d}", .{months.first_month});
         if (months.second_month) |second_month| {
@@ -23,7 +20,6 @@ pub fn main() !void {
         }
         try stdout.print("\n", .{});
         current_sunday = current_sunday.addDays(7);
-        try stdout.flush();
     }
 
     try stdout.flush();

@@ -66,7 +66,7 @@ pub const Date = struct {
 
         while (true) {
             const month_len = result.daysThisMonth();
-            if (days_remaining >= month_len) {
+            if (days_remaining > month_len) {
                 result.month += 1;
                 days_remaining -= month_len;
 
@@ -95,6 +95,9 @@ pub const Date = struct {
 
         const d3 = Date.init(2024, 11, 15);
         try std.testing.expectEqual(Date.init(2025, 2, 10), d3.addDays(87));
+
+        const d4 = Date.init(2025, 8, 24);
+        try std.testing.expectEqual(Date.init(2025, 8, 31), d4.addDays(7));
     }
 
     pub fn subtractDays(self: Date, count: u64) Date {
