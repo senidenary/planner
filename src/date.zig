@@ -192,7 +192,29 @@ test "addYears" {
     try std.testing.expectEqual(29, d.addYears(4).day);
 }
 
-pub const Weekday = enum {
+pub const Month = enum(u8) {
+    January = 1,
+    Febrary,
+    March,
+    April,
+    May,
+    June,
+    July,
+    August,
+    September,
+    October,
+    November,
+    December,
+};
+
+test "Month" {
+    try std.testing.expect(std.mem.eql(u8, "January", @tagName(Month.January)));
+
+    try std.testing.expectEqual(1, @intFromEnum(Month.January));
+    try std.testing.expectEqual(12, @intFromEnum(Month.December));
+}
+
+pub const Weekday = enum(u8) {
     Sun,
     Mon,
     Tue,
