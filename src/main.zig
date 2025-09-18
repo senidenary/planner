@@ -10,16 +10,20 @@ pub fn main() !void {
 
     const first_sunday = FirstSundayOfYear(year);
 
-    var current_sunday = first_sunday;
+    var current_date = first_sunday;
     for (1..54) |i| {
         try stdout.print("{d}: ", .{i});
-        const months = MonthsForWeekBeginningWith(current_sunday);
+        const months = MonthsForWeekBeginningWith(current_date);
         try stdout.print("{s}", .{@tagName(months.first_month)});
         if (months.second_month) |second_month| {
             try stdout.print(" | {s}", .{@tagName(second_month)});
         }
         try stdout.print("\n", .{});
-        current_sunday = current_sunday.addDays(7);
+        for (0..7) |_| {
+            try stdout.print("{d} ", .{current_date.day});
+            current_date = current_date.addDays(1);
+        }
+        try stdout.print("\n", .{});
     }
 
     try stdout.flush();
