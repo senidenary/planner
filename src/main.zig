@@ -26,6 +26,22 @@ pub fn main() !void {
         try stdout.print("\n", .{});
     }
 
+    const config: std.heap.GeneralPurposeAllocatorConfig = .{
+        .thread_safe = false,
+    };
+    var gpa = std.heap.GeneralPurposeAllocator(config){};
+    const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
+
+    const cwd = std.fs.cwd();
+    const max_file_size = 1024 * 1024 * 1024; // 1 GiB
+    const buf = try cwd.readFileAlloc(allocator, "weekly.plan.2.fodg", max_file_size);
+    defer allocator.free(buf);
+    try stdout.print("{s}\n", .{buf});
+    //var buf: [std.fs.max_path_bytes]u8 = undefined;
+    //const cwd = try std.process.getCwd(&buf);
+    //try stdout.print("cwd: {s}\n", .{cwd});
+
     try stdout.flush();
 }
 
