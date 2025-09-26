@@ -615,17 +615,17 @@
     </office:forms>
     <draw:frame draw:style-name="gr1" draw:text-style-name="P1" draw:layer="layout" svg:width="2.2cm" svg:height="1.631cm" svg:x="11.6cm" svg:y="5.4cm">
      <draw:text-box>
-      <text:p text:style-name="P1"><text:span text:style-name="T1">^^</text:span><text:span text:style-name="T1">S</text:span><text:span text:style-name="T1">un</text:span><text:span text:style-name="T1">da</text:span><text:span text:style-name="T1">y</text:span>日</text:p>
+      <text:p text:style-name="P1">^^Sunday日</text:p>
      </draw:text-box>
     </draw:frame>
     <draw:frame draw:style-name="gr2" draw:text-style-name="P1" draw:layer="layout" svg:width="2.2cm" svg:height="1.631cm" svg:x="11.6cm" svg:y="10.4cm">
      <draw:text-box>
-      <text:p text:style-name="P1"><text:span text:style-name="T1">^^</text:span><text:span text:style-name="T1">M</text:span><text:span text:style-name="T1">on</text:span><text:span text:style-name="T1">da</text:span><text:span text:style-name="T1">y</text:span><text:span text:style-name="T1">月</text:span></text:p>
+      <text:p text:style-name="P1">^^Monday月</text:p>
      </draw:text-box>
     </draw:frame>
     <draw:frame draw:style-name="gr3" draw:text-style-name="P1" draw:layer="layout" svg:width="2.2cm" svg:height="1.631cm" svg:x="11.6cm" svg:y="15.45cm">
      <draw:text-box>
-      <text:p text:style-name="P1"><text:span text:style-name="T1">^^</text:span><text:span text:style-name="T1">T</text:span><text:span text:style-name="T1">ue</text:span><text:span text:style-name="T1">sd</text:span><text:span text:style-name="T1">ay</text:span><text:span text:style-name="T1">火</text:span></text:p>
+      <text:p text:style-name="P1">^^Tuesday火</text:p>
      </draw:text-box>
     </draw:frame>
     <draw:line draw:style-name="gr4" draw:layer="layout" svg:x1="0.5cm" svg:y1="5.5cm" svg:x2="13.8cm" svg:y2="5.5cm">

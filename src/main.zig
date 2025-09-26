@@ -35,12 +35,20 @@ pub fn main() !void {
 
     const cwd = std.fs.cwd();
     const max_file_size = 1024 * 1024 * 1024; // 1 GiB
-    const buf = try cwd.readFileAlloc(allocator, "weekly.plan.2.fodg", max_file_size);
-    defer allocator.free(buf);
-    try stdout.print("{s}\n", .{buf});
-    //var buf: [std.fs.max_path_bytes]u8 = undefined;
-    //const cwd = try std.process.getCwd(&buf);
-    //try stdout.print("cwd: {s}\n", .{cwd});
+    const input_buffer = try cwd.readFileAlloc(allocator, "weekly.plan.2.fodg", max_file_size);
+    defer allocator.free(input_buffer);
+
+    const sunday_replaced = try std.mem.replaceOwned(u8, allocator, input_buffer, "^^Sunday", "0");
+    defer allocator.free(sunday_replaced);
+
+    const out_dir_name = "out_files";
+    try cwd.makeDir(out_dir_name);
+    const out_dir = try cwd.openDir(out_dir_name, .{});
+
+    const out_file = try out_dir.createFile("out.fodg", .{});
+    defer out_file.close();
+
+    _ = try out_file.write(sunday_replaced);
 
     try stdout.flush();
 }
