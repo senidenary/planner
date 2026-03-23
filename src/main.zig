@@ -2,11 +2,12 @@ const std = @import("std");
 const date = @import("date.zig");
 
 pub fn main() !void {
+    const input_filename = "weekly.plan.3.fodg";
     const year = 2026;
 
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout = &stdout_writer.interface;
+    // var stdout_buffer: [1024]u8 = undefined;
+    // var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    // const stdout = &stdout_writer.interface;
 
     const config: std.heap.GeneralPurposeAllocatorConfig = .{
         .thread_safe = false,
@@ -17,37 +18,39 @@ pub fn main() !void {
 
     const cwd = std.fs.cwd();
     const max_file_size = 1024 * 1024 * 1024; // 1 GiB
-    const input_buffer = try cwd.readFileAlloc(allocator, "weekly.plan.2.fodg", max_file_size);
+    const input_buffer = try cwd.readFileAlloc(allocator, input_filename, max_file_size);
     defer allocator.free(input_buffer);
 
-    // const out_dir_name = "out_files";
-    // try cwd.makeDir(out_dir_name);
-    // const out_dir = try cwd.openDir(out_dir_name, .{});
+    const out_dir_name = "out_files";
+    cwd.makeDir(out_dir_name) catch |err| {
+        std.debug.assert(err == std.posix.MakeDirError.PathAlreadyExists);
+    };
+    const out_dir = try cwd.openDir(out_dir_name, .{});
 
     const output_buffer = try allocator.alloc(u8, input_buffer.len);
     defer allocator.free(output_buffer);
-
-    // const trimmed_output = output_buffer[0..output_length];
 
     const first_sunday = FirstSundayOfYear(year);
 
     var current_date = first_sunday;
     for (1..54) |i| {
-        try stdout.print("{d}: ", .{i});
-        try stdout.print("\n", .{});
-        for (0..7) |_| {
-            try stdout.print("{d} ", .{current_date.day});
-            current_date = current_date.addDays(1);
-        }
-        try stdout.print("\n", .{});
+        var sub_set = try AllocSubstitutions(allocator, current_date, @intCast(i));
+        defer sub_set.deinit();
 
-        // const out_file = try out_dir.createFile("out.fodg", .{});
-        // defer out_file.close();
+        const output = PerformSubstitutions(input_buffer, output_buffer, sub_set.substitutions);
 
-        //_ = try out_file.write(sunday_replaced);
+        const out_filename = try std.fmt.allocPrint(allocator, "out_{d:0>2}.fodg", .{i});
+        defer allocator.free(out_filename);
+
+        const out_file = try out_dir.createFile(out_filename, .{});
+        defer out_file.close();
+
+        _ = try out_file.write(output);
+
+        current_date = current_date.addDays(7);
     }
 
-    try stdout.flush();
+    // try stdout.flush();
 }
 
 const Substitution = struct {
@@ -114,12 +117,15 @@ fn AllocSubstitutions(allocator: std.mem.Allocator, first_sunday: date.Date, wee
         const second_slice = try std.fmt.bufPrint(year_week_month_buffer[year_week_month_buffer_len..], "]", .{});
         year_week_month_buffer_len += second_slice.len;
     }
-    subs[0] = Substitution.initOwned(allocator, "^^YearWeekMonth", year_week_month_buffer, year_week_month_buffer_len);
+    const year_week_month = "^^YearWeekMonthWithEnoughPaddingToCoverReallyLongMonthNames";
+    std.debug.assert(year_week_month.len > year_week_month_buffer_len);
+    subs[0] = Substitution.initOwned(allocator, year_week_month, year_week_month_buffer, year_week_month_buffer_len);
 
     var current_day = first_sunday;
     const tags = [_][]const u8{ "^^Sunday", "^^Monday", "^^Tuesday", "^^Wednesday", "^^Thursday", "^^Friday", "^^Saturday" };
     for (tags, 1..8) |t, i| {
         const buffer = try std.fmt.allocPrint(allocator, "{d}", .{current_day.day});
+        std.debug.assert(t.len > buffer.len);
         subs[i] = Substitution.initOwned(allocator, t, buffer, buffer.len);
         current_day = current_day.addDays(1);
     }
