@@ -53,6 +53,48 @@ pub fn main() !void {
     try stdout.flush();
 }
 
+test "replaceOwned" {
+    var gpa = std.heap.DebugAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
+
+    const input_buffer = "abc^^Sundaydef";
+
+    const sunday_replaced = try std.mem.replaceOwned(u8, allocator, input_buffer, "^^Sunday", "0");
+    defer allocator.free(sunday_replaced);
+
+    try std.testing.expectEqualStrings("abc0def", sunday_replaced);
+}
+
+test "replaceMultiple" {
+    var gpa = std.heap.DebugAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
+
+    const Substitution = struct {
+        from: []const u8,
+        to: []const u8,
+    };
+    const substitutions = [_]Substitution{
+        Substitution{ .from = "^^Sunday", .to = "0" },
+        Substitution{ .from = "^^Monday", .to = "1" },
+    };
+    const input_buffer = "abc^^Sundaydef^^Mondayghi";
+    const output_buffer = try allocator.dupe(u8, input_buffer);
+    defer allocator.free(output_buffer);
+
+    var output_length = output_buffer.len;
+    for (substitutions) |s| {
+        const replacements = std.mem.replace(u8, output_buffer, s.from, s.to, output_buffer);
+        output_length -= (s.from.len - s.to.len) * replacements;
+        try std.testing.expectEqual(1, replacements);
+    }
+
+    const trimmed_output = output_buffer[0..output_length];
+
+    try std.testing.expectEqualStrings("abc0def1ghi", trimmed_output);
+}
+
 fn FirstSundayOfYear(year: u16) date.Date {
     // The first week of the year always contains January 4
     const first_jan_4 = date.Date.init(year, 1, 4);
