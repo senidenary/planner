@@ -5,10 +5,6 @@ pub fn main() !void {
     const input_filename = "weekly.plan.3.fodg";
     const year = 2026;
 
-    // var stdout_buffer: [1024]u8 = undefined;
-    // var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    // const stdout = &stdout_writer.interface;
-
     const config: std.heap.GeneralPurposeAllocatorConfig = .{
         .thread_safe = false,
     };
@@ -49,8 +45,6 @@ pub fn main() !void {
 
         current_date = current_date.addDays(7);
     }
-
-    // try stdout.flush();
 }
 
 const Substitution = struct {
@@ -106,9 +100,10 @@ fn AllocSubstitutions(allocator: std.mem.Allocator, first_sunday: date.Date, wee
     var subs = try allocator.alloc(Substitution, 8);
 
     const months = MonthsForWeekBeginningWith(first_sunday);
+    const week_year = first_sunday.addDays(4).year; // The week is considered to be in whichever year Thursday falls on
     const year_week_month_buffer = try allocator.alloc(u8, 128);
 
-    const initial_slice = try std.fmt.bufPrint(year_week_month_buffer, "{d}-W{d} [ {s} ", .{ first_sunday.year, week_number, @tagName(months.first_month) });
+    const initial_slice = try std.fmt.bufPrint(year_week_month_buffer, "{d}-W{d} [ {s} ", .{ week_year, week_number, @tagName(months.first_month) });
     var year_week_month_buffer_len = initial_slice.len;
     if (months.second_month) |second_month| {
         const second_slice = try std.fmt.bufPrint(year_week_month_buffer[year_week_month_buffer_len..], "| {s} ]", .{@tagName(second_month)});
@@ -138,29 +133,42 @@ test "AllocSubstitutions" {
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    var sub_set = try AllocSubstitutions(allocator, date.Date{ .year = 2026, .month = 1, .day = 4 }, 1);
+    var sub_set = try AllocSubstitutions(allocator, FirstSundayOfYear(2025), 1);
     defer sub_set.deinit();
 
-    try std.testing.expectEqualStrings("2026-W1 [ January ]", sub_set.substitutions[0].to);
-    try std.testing.expectEqualStrings("4", sub_set.substitutions[1].to);
-    try std.testing.expectEqualStrings("5", sub_set.substitutions[2].to);
-    try std.testing.expectEqualStrings("6", sub_set.substitutions[3].to);
-    try std.testing.expectEqualStrings("7", sub_set.substitutions[4].to);
-    try std.testing.expectEqualStrings("8", sub_set.substitutions[5].to);
-    try std.testing.expectEqualStrings("9", sub_set.substitutions[6].to);
-    try std.testing.expectEqualStrings("10", sub_set.substitutions[7].to);
+    try std.testing.expectEqualStrings("2025-W1 [ December | January ]", sub_set.substitutions[0].to);
+    try std.testing.expectEqualStrings("29", sub_set.substitutions[1].to);
+    try std.testing.expectEqualStrings("30", sub_set.substitutions[2].to);
+    try std.testing.expectEqualStrings("31", sub_set.substitutions[3].to);
+    try std.testing.expectEqualStrings("1", sub_set.substitutions[4].to);
+    try std.testing.expectEqualStrings("2", sub_set.substitutions[5].to);
+    try std.testing.expectEqualStrings("3", sub_set.substitutions[6].to);
+    try std.testing.expectEqualStrings("4", sub_set.substitutions[7].to);
 
-    var sub_set2 = try AllocSubstitutions(allocator, date.Date{ .year = 2026, .month = 3, .day = 29 }, 14);
+    // Special case where the first Sunday is the 4th
+    var sub_set2 = try AllocSubstitutions(allocator, FirstSundayOfYear(2026), 1);
     defer sub_set2.deinit();
 
-    try std.testing.expectEqualStrings("2026-W14 [ March | April ]", sub_set2.substitutions[0].to);
-    try std.testing.expectEqualStrings("29", sub_set2.substitutions[1].to);
-    try std.testing.expectEqualStrings("30", sub_set2.substitutions[2].to);
-    try std.testing.expectEqualStrings("31", sub_set2.substitutions[3].to);
-    try std.testing.expectEqualStrings("1", sub_set2.substitutions[4].to);
-    try std.testing.expectEqualStrings("2", sub_set2.substitutions[5].to);
-    try std.testing.expectEqualStrings("3", sub_set2.substitutions[6].to);
-    try std.testing.expectEqualStrings("4", sub_set2.substitutions[7].to);
+    try std.testing.expectEqualStrings("2026-W1 [ December | January ]", sub_set2.substitutions[0].to);
+    try std.testing.expectEqualStrings("28", sub_set2.substitutions[1].to);
+    try std.testing.expectEqualStrings("29", sub_set2.substitutions[2].to);
+    try std.testing.expectEqualStrings("30", sub_set2.substitutions[3].to);
+    try std.testing.expectEqualStrings("31", sub_set2.substitutions[4].to);
+    try std.testing.expectEqualStrings("1", sub_set2.substitutions[5].to);
+    try std.testing.expectEqualStrings("2", sub_set2.substitutions[6].to);
+    try std.testing.expectEqualStrings("3", sub_set2.substitutions[7].to);
+
+    var sub_set3 = try AllocSubstitutions(allocator, date.Date{ .year = 2026, .month = 3, .day = 29 }, 14);
+    defer sub_set3.deinit();
+
+    try std.testing.expectEqualStrings("2026-W14 [ March | April ]", sub_set3.substitutions[0].to);
+    try std.testing.expectEqualStrings("29", sub_set3.substitutions[1].to);
+    try std.testing.expectEqualStrings("30", sub_set3.substitutions[2].to);
+    try std.testing.expectEqualStrings("31", sub_set3.substitutions[3].to);
+    try std.testing.expectEqualStrings("1", sub_set3.substitutions[4].to);
+    try std.testing.expectEqualStrings("2", sub_set3.substitutions[5].to);
+    try std.testing.expectEqualStrings("3", sub_set3.substitutions[6].to);
+    try std.testing.expectEqualStrings("4", sub_set3.substitutions[7].to);
 }
 
 /// returns the valid slice of `output_buffer`.
@@ -198,14 +206,18 @@ fn FirstSundayOfYear(year: u16) date.Date {
     const first_jan_4 = date.Date.init(year, 1, 4);
     const first_jan_4_weekday = first_jan_4.weekday();
 
-    return first_jan_4.subtractDays(@intFromEnum(first_jan_4_weekday));
+    if (first_jan_4_weekday == date.Weekday.Sun) {
+        return first_jan_4.subtractDays(7);
+    } else {
+        return first_jan_4.subtractDays(@intFromEnum(first_jan_4_weekday));
+    }
 }
 
-test "First Sunday 2025" {
+test "FirstSundayOfYear" {
     try std.testing.expectEqual(date.Date.init(2023, 1, 1), FirstSundayOfYear(2023));
     try std.testing.expectEqual(date.Date.init(2023, 12, 31), FirstSundayOfYear(2024));
     try std.testing.expectEqual(date.Date.init(2024, 12, 29), FirstSundayOfYear(2025));
-    try std.testing.expectEqual(date.Date.init(2026, 1, 4), FirstSundayOfYear(2026));
+    try std.testing.expectEqual(date.Date.init(2025, 12, 28), FirstSundayOfYear(2026));
 }
 
 const MonthPair = struct { first_month: date.Month, second_month: ?date.Month = null };
